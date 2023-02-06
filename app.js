@@ -6,16 +6,17 @@ const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
 const path = require('path');
-
+const cookieParser = require('cookie-parser')
 
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
 const viewRouter = require('./routes/viewRoutes');
+const bookingRouter = require('./routes/bookingRoutes');
 const AppError = require('./utils/appError');
 const errorController = require('./controllers/errorController');
 
-const app = express()
+const app = express();
 
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'))
@@ -24,7 +25,6 @@ app.set('views', path.join(__dirname, 'views'))
 //MIDDLEWARES
 app.use(express.static(path.join(__dirname, 'public')));
 //SET SECURITY HTTP HEADERS
-// app.use(helmet());
 app.use(helmet());
 app.use(
     helmet.contentSecurityPolicy({
@@ -34,8 +34,7 @@ app.use(
             fontSrc: ["'self'", 'https:', 'data:'],
             scriptSrc: ["'self'", 'https://cdnjs.cloudflare.com/ajax/libs/axios/1.2.3/axios.min.js'],
             objectSrc: ["'none'"],
-            styleSrc: ["'self'", 'https:', 'unsafe-inline'],
-            upgradeInsecureRequests: [],
+            styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
         },
     })
 );
@@ -53,6 +52,11 @@ app.use('/api', limiter);
 app.use(express.json({
     limit: '10kb'
 }));
+app.use(cookieParser());
+app.use(express.urlencoded({
+    extended: true,
+    limit: '10kb'
+}));
 
 //Data sanitization against NoSQL query injections
 app.use(mongoSanitize());
@@ -67,10 +71,11 @@ app.use(hpp({
 
 //ROUTES
 
-app.use('/', viewRouter);
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
+app.use('/api/v1/bookings', bookingRouter);
+app.use('/', viewRouter);
 
 app.all('*', (req, res, next) => {
     next(new AppError(`Couldn't find ${req.originalUrl}`, 404));

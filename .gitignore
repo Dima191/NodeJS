@@ -2,3 +2,5 @@
 config.env
 /.idea
 .DS_Store
+.gitignore
+.cache
